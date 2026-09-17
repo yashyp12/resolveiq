@@ -28,3 +28,13 @@ python -m backend.seed
 
 Optional environment variables are `AWS_REGION`, `INCIDENTS_TABLE_NAME`, and
 `RUNBOOKS_TABLE_NAME`. The tables must exist before running the seed command.
+
+## Deterministic evidence retrieval
+
+[retrieval.py](./retrieval.py) is an AWS-independent scoring component. It
+accepts the current incident plus historical incidents and curated runbooks,
+then returns stable, explainable evidence ordered by score and evidence ID.
+It excludes the current incident, ignores zero-score records, collapses
+duplicate IDs, and bounds the Bedrock context to five historical incidents and
+three runbooks. This is simple token and field matching; DynamoDB is used for
+persistence, not semantic search.
