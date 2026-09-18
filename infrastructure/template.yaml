@@ -1,0 +1,103 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: ResolveIQ evidence-first incident analysis MVP
+
+Parameters:
+  AnalysisProvider:
+    Type: String
+    Default: mock
+    AllowedValues:
+      - mock
+      - bedrock
+  BedrockModelId:
+    Type: String
+    Default: ""
+  CorsAllowOrigin:
+    Type: String
+    Default: "*"
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Timeout: 30
+    MemorySize: 512
+    Environment:
+      Variables:
+        ANALYSIS_PROVIDER: !Ref AnalysisProvider
+        BEDROCK_MODEL_ID: !Ref BedrockModelId
+        INCIDENTS_TABLE_NAME: !Ref IncidentsTable
+        RUNBOOKS_TABLE_NAME: !Ref RunbooksTable
+
+Resources:
+  IncidentsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ResolveIQ-Incidents
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: incidentId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: incidentId
+          KeyType: HASH
+
+  RunbooksTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ResolveIQ-Runbooks
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: runbookId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: runbookId
+          KeyType: HASH
+
+  ResolveIQApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: $default
+      CorsConfiguration:
+        AllowOrigins:
+          - !Ref CorsAllowOrigin
+        AllowHeaders:
+          - content-type
+        AllowMethods:
+          - POST
+          - OPTIONS
+
+  IncidentAnalysisFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: ResolveIQ-IncidentAnalysis
+      CodeUri: ..
+      Handler: backend.api.lambda_handler
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref IncidentsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref RunbooksTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource: "*"
+      Events:
+        AnalyzeIncident:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref ResolveIQApi
+            Path: /incidents/analyze
+            Method: POST
+
+Outputs:
+  ApiUrl:
+    Description: ResolveIQ HTTP API endpoint
+    Value: !Sub https://${ResolveIQApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}
+  IncidentsTableName:
+    Value: !Ref IncidentsTable
+  RunbooksTableName:
+    Value: !Ref RunbooksTable
+  LambdaFunctionName:
+    Value: !Ref IncidentAnalysisFunction
