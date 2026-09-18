@@ -25,6 +25,7 @@ Globals:
       Variables:
         ANALYSIS_PROVIDER: !Ref AnalysisProvider
         BEDROCK_MODEL_ID: !Ref BedrockModelId
+        CORS_ALLOW_ORIGIN: !Ref CorsAllowOrigin
         INCIDENTS_TABLE_NAME: !Ref IncidentsTable
         RUNBOOKS_TABLE_NAME: !Ref RunbooksTable
 
@@ -89,6 +90,12 @@ Resources:
           Properties:
             ApiId: !Ref ResolveIQApi
             Path: /incidents/analyze
+            Method: POST
+        GenerateRunbook:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref ResolveIQApi
+            Path: /incidents/{incidentId}/runbook
             Method: POST
 
 Outputs:

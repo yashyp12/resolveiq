@@ -3,7 +3,7 @@ import json
 import pytest
 
 from backend.analysis import MockBedrockAdapter
-from backend.api import analyze_incident, lambda_handler
+from backend.api import analyze_incident, generate_runbook, lambda_handler
 from backend.repository import ResolveIQRepository
 from backend.seed_data import curated_runbooks, historical_incidents
 
@@ -103,6 +103,22 @@ def test_invalid_evidence_id_is_rejected():
 
     with pytest.raises(ValueError, match="unknown evidence ID"):
         analyze_incident(valid_payload(), repository, InvalidAdapter())
+
+
+def test_runbook_requires_resolution_and_persists_successful_context():
+    repository, incidents = repository_with_seed_data()
+    incident = analyze_incident(valid_payload(), repository, id_factory=lambda: "INC-RUNBOOK")
+
+    result = generate_runbook(
+        incident["incident"]["incidentId"],
+        {"resolution": "Reverted the fictional deployment and verified connectivity."},
+        repository,
+        id_factory=lambda: "RB-GENERATED",
+    )
+
+    assert result["runbook"]["runbookId"] == "RB-GENERATED"
+    assert result["runbook"]["remediation"] == ["Reverted the fictional deployment and verified connectivity."]
+    assert repository.get_runbook("RB-GENERATED") is not None
 
 
 @pytest.mark.parametrize("confidence", [-0.1, 1.1])

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ResolveIQ | Evidence-first incident analysis</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="hero">
+        <p class="eyebrow">RESOLVEIQ / INCIDENT INTELLIGENCE</p>
+        <h1>Turn incident signals into a defensible next step.</h1>
+        <p class="lede">Compare a current incident with fictional historical evidence and runbooks. ResolveIQ suggests checks without making production changes.</p>
+      </header>
+
+      <section class="panel">
+        <form id="incident-form">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">CURRENT INCIDENT</p>
+              <h2>Describe what is happening</h2>
+            </div>
+            <span class="badge">Human-controlled guidance</span>
+          </div>
+          <div class="grid">
+            <label>Title <input name="title" maxlength="200" required placeholder="EC2 application server unreachable" /></label>
+            <label>Environment <input name="environment" maxlength="100" required placeholder="production-like demo" /></label>
+            <label class="wide">Description <textarea name="description" maxlength="3000" required placeholder="What changed, and what symptoms are visible?"></textarea></label>
+            <label>Service <input name="service" maxlength="100" placeholder="application-server" /></label>
+            <label>Error message <input name="error" maxlength="1000" placeholder="connection timeout" /></label>
+          </div>
+          <button id="submit-button" type="submit">Analyze incident <span aria-hidden="true">→</span></button>
+          <p id="form-error" class="error" role="alert" hidden></p>
+        </form>
+      </section>
+
+      <section id="results" hidden>
+        <div class="result-header">
+          <div>
+            <p class="eyebrow">ANALYSIS RESULT</p>
+            <h2 id="result-title"></h2>
+          </div>
+          <span id="category" class="category"></span>
+        </div>
+        <div class="result-grid">
+          <article class="card facts"><p class="eyebrow">CURRENT INCIDENT</p><div id="facts"></div></article>
+          <article class="card inference"><p class="eyebrow">AI INFERENCE</p><div id="causes"></div></article>
+          <article class="card evidence"><p class="eyebrow">HISTORICAL EVIDENCE</p><div id="evidence"></div></article>
+          <article class="card checks"><p class="eyebrow">RECOMMENDED CHECKS</p><ol id="checks"></ol></article>
+        </div>
+        <article class="card uncertainty"><p class="eyebrow">UNCERTAINTY</p><p id="uncertainty"></p></article>
+      </section>
+      <p class="footer">ResolveIQ uses fictional/anonymized records. Recommendations are diagnostic only and require human approval.</p>
+    </main>
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
