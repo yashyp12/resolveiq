@@ -12,7 +12,9 @@ from .analysis import (
     AnalysisAdapter,
     BedrockAnalysisAdapter,
     BedrockAnalysisError,
+    BedrockRunbookAdapter,
     MockBedrockAdapter,
+    MockRunbookAdapter,
     validate_analysis_response,
 )
 from .models import GeneratedRunbook, Incident
@@ -67,19 +69,20 @@ def generate_runbook(
     incident = repository.get_incident(incident_id)
     if incident is None:
         raise LookupError("incident was not found")
+    historical = repository.retrieve_historical_incidents(limit=30)
+    runbooks = repository.retrieve_curated_runbooks(limit=10)
+    retrieved = retrieve_evidence(incident, historical, runbooks, RETRIEVAL_CONFIG)
+    generated = _runbook_adapter().generate(incident, resolution, retrieved)
     runbook_id = id_factory() if id_factory else f"RB-{uuid4().hex}"
     runbook = GeneratedRunbook(
         runbook_id=runbook_id,
-        title=f"Runbook: {incident.title}",
-        problem=incident.description,
-        preconditions=["Confirm human approval before making any production change."],
-        diagnostic_steps=[
-            "Review the incident facts and reproduce the observed symptom where safe.",
-            f"Apply the documented successful resolution: {resolution}",
-        ],
-        verification=["Confirm the original symptom is no longer present.", "Record the verification evidence."],
-        remediation=[resolution],
-        escalation=["Escalate to the service owner if verification fails or evidence is insufficient."],
+        title=generated["title"],
+        problem=generated["problem"],
+        preconditions=generated["preconditions"],
+        diagnostic_steps=generated["diagnosticSteps"],
+        verification=generated["verification"],
+        remediation=generated["remediation"],
+        escalation=generated["escalation"],
         created_at=datetime.now(timezone.utc).isoformat(),
     )
     repository.save_runbook(runbook)
@@ -141,6 +144,15 @@ def _analysis_adapter() -> AnalysisAdapter:
         return MockBedrockAdapter()
     if provider == "bedrock":
         return BedrockAnalysisAdapter()
+    raise ValueError("ANALYSIS_PROVIDER must be either mock or bedrock")
+
+
+def _runbook_adapter() -> Any:
+    provider = os.getenv("ANALYSIS_PROVIDER", "mock").strip().lower()
+    if provider == "mock":
+        return MockRunbookAdapter()
+    if provider == "bedrock":
+        return BedrockRunbookAdapter()
     raise ValueError("ANALYSIS_PROVIDER must be either mock or bedrock")
 
 

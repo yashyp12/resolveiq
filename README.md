@@ -124,8 +124,8 @@ they are returned.
 ## Limitations
 
 The current deployment is intentionally small: it has no authentication,
-history dashboard, or static hosting resource. The generated runbook path
-requires a user-supplied resolution and uses a deterministic local-safe
-generator; Bedrock runbook generation remains a follow-up enhancement. AWS
+history dashboard, or static hosting resource. Runbook generation requires a
+user-supplied successful resolution; it uses the configured Bedrock provider
+when enabled and a deterministic local-safe generator in mock mode. AWS
 deployment and real Bedrock smoke tests require an installed SAM/AWS CLI,
 valid credentials, and a model enabled in the target account and region.
