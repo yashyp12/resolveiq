@@ -2,7 +2,12 @@ const form = document.querySelector("#incident-form");
 const button = document.querySelector("#submit-button");
 const formError = document.querySelector("#form-error");
 const results = document.querySelector("#results");
+const runbookForm = document.querySelector("#runbook-form");
+const runbookButton = document.querySelector("#runbook-button");
+const runbookError = document.querySelector("#runbook-error");
+const runbookResult = document.querySelector("#runbook-result");
 const apiBaseUrl = (window.RESOLVEIQ_CONFIG?.apiBaseUrl || "").replace(/\/$/, "");
+let currentIncidentId = null;
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -34,6 +39,7 @@ form.addEventListener("submit", async (event) => {
 
 function render(result) {
   const { incident, evidence = [], analysis } = result;
+  currentIncidentId = incident.incidentId;
   document.querySelector("#result-title").textContent = incident.title;
   document.querySelector("#category").textContent = analysis.category;
   document.querySelector("#facts").innerHTML = [
@@ -52,6 +58,44 @@ function render(result) {
   document.querySelector("#uncertainty").textContent = analysis.uncertainty;
   results.hidden = false;
   results.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+runbookForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  runbookError.hidden = true;
+  runbookButton.disabled = true;
+  runbookButton.textContent = "Generating…";
+  try {
+    const response = await fetch(`${apiBaseUrl}/incidents/${encodeURIComponent(currentIncidentId)}/runbook`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ resolution: document.querySelector("#resolution").value })
+    });
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.error?.message || "The runbook request failed.");
+    renderRunbook(body.runbook);
+  } catch (error) {
+    runbookError.textContent = error.message || "The runbook request failed.";
+    runbookError.hidden = false;
+  } finally {
+    runbookButton.disabled = false;
+    runbookButton.textContent = "Generate runbook";
+  }
+});
+
+function renderRunbook(runbook) {
+  const sections = [
+    ["Problem", [runbook.problem]],
+    ["Preconditions", runbook.preconditions],
+    ["Diagnostic steps", runbook.diagnosticSteps],
+    ["Verification", runbook.verification],
+    ["Remediation", runbook.remediation],
+    ["Escalation", runbook.escalation]
+  ];
+  runbookResult.innerHTML = `<h3>${escapeHtml(runbook.title)}</h3>${sections.map(([title, items]) =>
+    `<div class="runbook-section"><strong>${escapeHtml(title)}</strong><ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></div>`
+  ).join("")}`;
+  runbookResult.hidden = false;
 }
 
 function escapeHtml(value) {

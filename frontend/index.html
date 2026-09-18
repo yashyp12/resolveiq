@@ -50,6 +50,17 @@
           <article class="card checks"><p class="eyebrow">RECOMMENDED CHECKS</p><ol id="checks"></ol></article>
         </div>
         <article class="card uncertainty"><p class="eyebrow">UNCERTAINTY</p><p id="uncertainty"></p></article>
+        <article class="card runbook-panel">
+          <p class="eyebrow">REUSABLE RUNBOOK</p>
+          <h3>What resolved the incident?</h3>
+          <p class="muted">Supply the successful resolution. ResolveIQ will preserve it as human-approved troubleshooting knowledge.</p>
+          <form id="runbook-form">
+            <textarea id="resolution" maxlength="3000" required placeholder="Example: Reverted the fictional deployment and verified that checkout requests returned HTTP 200."></textarea>
+            <button id="runbook-button" type="submit">Generate runbook</button>
+          </form>
+          <p id="runbook-error" class="error" role="alert" hidden></p>
+          <div id="runbook-result" hidden></div>
+        </article>
       </section>
       <p class="footer">ResolveIQ uses fictional/anonymized records. Recommendations are diagnostic only and require human approval.</p>
     </main>
