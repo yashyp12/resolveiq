@@ -29,6 +29,13 @@ It creates two on-demand DynamoDB tables, one Lambda function, an HTTP API, and
 least-privilege table/Bedrock permissions. No credentials are stored in this
 repository.
 
+### Verified deployment state
+
+The implementation is deployment-ready but has not been deployed from this
+workspace: the AWS CLI, AWS SAM CLI, and an authenticated AWS credential
+provider are unavailable here. Consequently there is no verified API URL,
+CloudFormation stack, AWS resource, or live smoke-test result to report.
+
 ## Workflow
 
 1. Submit an incident at `POST /incidents/analyze`.

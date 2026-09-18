@@ -7,6 +7,7 @@ from botocore.exceptions import ClientError
 from backend.analysis import (
     BedrockAnalysisAdapter,
     BedrockAnalysisError,
+    BedrockRunbookAdapter,
     MockBedrockAdapter,
 )
 from backend.api import _analysis_adapter, analyze_incident
@@ -108,6 +109,26 @@ def test_malformed_bedrock_response_is_sanitized():
 
     with pytest.raises(BedrockAnalysisError, match="invalid analysis response"):
         adapter.analyze(incident(), evidence())
+
+
+def test_bedrock_runbook_adapter_returns_structured_runbook():
+    value = {
+        "title": "Checkout API recovery",
+        "problem": "Checkout requests returned HTTP 502.",
+        "preconditions": ["Confirm approval."],
+        "diagnosticSteps": ["Review deployment logs."],
+        "verification": ["Confirm HTTP 200 responses."],
+        "remediation": ["Revert the fictional deployment."],
+        "escalation": ["Contact the service owner."],
+    }
+    client = FakeBedrockClient(converse_response(value))
+    adapter = BedrockRunbookAdapter(client=client, model_id="demo-model")
+
+    result = adapter.generate(incident(), "Reverted the fictional deployment.", evidence())
+
+    assert result == value
+    assert client.requests[0]["modelId"] == "demo-model"
+    assert "SUCCESSFUL RESOLUTION" in client.requests[0]["messages"][0]["content"][0]["text"]
 
 
 @pytest.mark.parametrize(
