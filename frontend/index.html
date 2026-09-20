@@ -23,45 +23,125 @@
             </div>
             <span class="badge">Human-controlled guidance</span>
           </div>
+
           <div class="grid">
-            <label>Title <input name="title" maxlength="200" required placeholder="EC2 application server unreachable" /></label>
-            <label>Environment <input name="environment" maxlength="100" required placeholder="production-like demo" /></label>
-            <label class="wide">Description <textarea name="description" maxlength="3000" required placeholder="What changed, and what symptoms are visible?"></textarea></label>
-            <label>Service <input name="service" maxlength="100" placeholder="application-server" /></label>
-            <label>Error message <input name="error" maxlength="1000" placeholder="connection timeout" /></label>
+            <label for="input-title">Title <span class="required-indicator" aria-hidden="true">*</span>
+              <input id="input-title" name="title" maxlength="200" required placeholder="EC2 application server unreachable" />
+            </label>
+            <label for="input-environment">Environment <span class="required-indicator" aria-hidden="true">*</span>
+              <input id="input-environment" name="environment" maxlength="100" required placeholder="production-like demo" />
+            </label>
+            <label for="input-description" class="wide">Description <span class="required-indicator" aria-hidden="true">*</span>
+              <textarea id="input-description" name="description" maxlength="3000" required placeholder="What changed, and what symptoms are visible?"></textarea>
+            </label>
+            <label for="input-service">Service
+              <input id="input-service" name="service" maxlength="100" placeholder="application-server" />
+            </label>
+            <label for="input-error">Error message
+              <input id="input-error" name="error" maxlength="1000" placeholder="connection timeout" />
+            </label>
           </div>
-          <button id="submit-button" type="submit">Analyze incident <span aria-hidden="true">→</span></button>
+
+          <div class="form-actions">
+            <button id="submit-button" type="submit" class="btn btn-primary">
+              <span class="btn-text">Analyze incident</span>
+              <span class="btn-icon" aria-hidden="true">→</span>
+            </button>
+            <button id="demo-button" type="button" class="btn btn-secondary">
+              Load demo incident
+            </button>
+            <button id="reset-button" type="button" class="btn btn-ghost">
+              Clear
+            </button>
+          </div>
+
+          <p id="demo-notice" class="demo-notice" role="status" hidden>
+            Loaded fictional scenario for demonstration. You can inspect or edit before analyzing.
+          </p>
           <p id="form-error" class="error" role="alert" hidden></p>
         </form>
       </section>
 
-      <section id="results" hidden>
+      <section id="results" class="results-section" hidden>
         <div class="result-header">
           <div>
             <p class="eyebrow">ANALYSIS RESULT</p>
             <h2 id="result-title"></h2>
           </div>
-          <span id="category" class="category"></span>
+          <div class="result-header-actions">
+            <span id="category" class="category"></span>
+            <button id="copy-analysis-btn" type="button" class="btn btn-outline btn-sm" title="Copy analysis summary to clipboard">
+              <span class="btn-text">Copy analysis</span>
+            </button>
+          </div>
         </div>
+
         <div class="result-grid">
-          <article class="card facts"><p class="eyebrow">CURRENT INCIDENT</p><div id="facts"></div></article>
-          <article class="card inference"><p class="eyebrow">AI INFERENCE</p><div id="causes"></div></article>
-          <article class="card evidence"><p class="eyebrow">HISTORICAL EVIDENCE</p><div id="evidence"></div></article>
-          <article class="card checks"><p class="eyebrow">RECOMMENDED CHECKS</p><ol id="checks"></ol></article>
+          <article class="card card-facts">
+            <div class="card-header">
+              <p class="eyebrow">CURRENT INCIDENT</p>
+              <span class="card-tag tag-facts">Human Facts</span>
+            </div>
+            <div id="facts" class="facts-content"></div>
+          </article>
+
+          <article class="card card-evidence">
+            <div class="card-header">
+              <p class="eyebrow">HISTORICAL EVIDENCE</p>
+              <span class="card-tag tag-evidence">Fictional Records</span>
+            </div>
+            <p class="card-hint">Historical incidents retrieved by symptom similarity.</p>
+            <div id="evidence" class="evidence-content"></div>
+          </article>
+
+          <article class="card card-inference">
+            <div class="card-header">
+              <p class="eyebrow">AI INFERENCE</p>
+              <span class="card-tag tag-inference">Hypothesis · Unconfirmed</span>
+            </div>
+            <p class="card-hint">Model-generated hypotheses. Requires human verification before making changes.</p>
+            <div id="causes" class="causes-content"></div>
+          </article>
+
+          <article class="card card-checks">
+            <div class="card-header">
+              <p class="eyebrow">RECOMMENDED CHECKS</p>
+              <span class="card-tag tag-checks">Diagnostic Only</span>
+            </div>
+            <p class="card-hint">Recommended verification steps before applying remediation.</p>
+            <ol id="checks" class="checks-list"></ol>
+          </article>
         </div>
-        <article class="card uncertainty"><p class="eyebrow">UNCERTAINTY</p><p id="uncertainty"></p></article>
+
+        <article class="card card-uncertainty">
+          <div class="card-header">
+            <p class="eyebrow">UNCERTAINTY &amp; BOUNDARIES</p>
+            <span class="card-tag tag-uncertainty">Limitations</span>
+          </div>
+          <p id="uncertainty" class="uncertainty-content"></p>
+        </article>
+
         <article class="card runbook-panel">
-          <p class="eyebrow">REUSABLE RUNBOOK</p>
+          <div class="card-header">
+            <p class="eyebrow">REUSABLE RUNBOOK</p>
+            <span class="card-tag tag-runbook">Knowledge Preservation</span>
+          </div>
           <h3>What resolved the incident?</h3>
           <p class="muted">Supply the successful resolution. ResolveIQ will preserve it as human-approved troubleshooting knowledge.</p>
           <form id="runbook-form">
+            <label for="resolution" class="sr-only">Resolution description</label>
             <textarea id="resolution" maxlength="3000" required placeholder="Example: Reverted the fictional deployment and verified that checkout requests returned HTTP 200."></textarea>
-            <button id="runbook-button" type="submit">Generate runbook</button>
+            <div class="runbook-actions">
+              <button id="runbook-button" type="submit" class="btn btn-primary">
+                <span class="btn-text">Generate runbook</span>
+              </button>
+            </div>
           </form>
           <p id="runbook-error" class="error" role="alert" hidden></p>
-          <div id="runbook-result" hidden></div>
+          <div id="runbook-result" class="runbook-result" hidden></div>
         </article>
       </section>
+
       <p class="footer">ResolveIQ uses fictional/anonymized records. Recommendations are diagnostic only and require human approval.</p>
     </main>
     <script src="config.js"></script>
