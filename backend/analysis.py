@@ -3,6 +3,7 @@
 from collections.abc import Mapping, Sequence
 import json
 import os
+import re
 from typing import Any, Protocol
 
 import boto3
@@ -161,7 +162,15 @@ class BedrockRunbookAdapter:
     ) -> Mapping[str, Any]:
         request = {
             "modelId": self.model_id,
-            "system": [{"text": "Generate only a safe, structured runbook. Never invent evidence or perform automatic remediation."}],
+            "system": [{
+                "text": (
+                    "Generate only a raw JSON object. Do not include a conversational introduction, "
+                    "Markdown code fences, or explanatory text before or after the JSON. Use exactly "
+                    "these field names: title, problem, preconditions, diagnosticSteps, verification, "
+                    "remediation, escalation. Never invent evidence or perform automatic remediation. "
+                    "Keep all remediation human-controlled."
+                )
+            }],
             "messages": [{"role": "user", "content": [{"text": _runbook_prompt(incident, resolution, evidence, analysis)}]}],
             "inferenceConfig": {"maxTokens": BEDROCK_MAX_TOKENS, "temperature": 0.1},
         }
@@ -251,6 +260,8 @@ def _validate_runbook_response(response: Mapping[str, Any]) -> dict[str, Any]:
         result[field] = _string(value, field, 3000)
     for field in fields[2:]:
         value = response[field]
+        if isinstance(value, str) and value.strip():
+            value = [value]
         _bounded_list(value, field, MAX_RECOMMENDED_CHECKS)
         result[field] = [_string(item, f"{field}[{index}]", MAX_CHECK_LENGTH) for index, item in enumerate(value)]
     return result
@@ -271,11 +282,29 @@ def _parse_converse_response(response: Mapping[str, Any]) -> dict[str, Any]:
     text = "".join(block["text"] for block in content if isinstance(block, Mapping) and "text" in block).strip()
     if not text:
         raise ValueError("response did not contain text")
-    if text.startswith("```"):
-        text = text.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
-    parsed = json.loads(text)
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError:
+        fenced = re.fullmatch(r"```(?:json)?\s*(.*?)\s*```", text, flags=re.DOTALL | re.IGNORECASE)
+        if fenced:
+            parsed = json.loads(fenced.group(1))
+        else:
+            decoder = json.JSONDecoder()
+            parsed = None
+            for index, character in enumerate(text):
+                if character != "{":
+                    continue
+                try:
+                    candidate, _ = decoder.raw_decode(text[index:])
+                except json.JSONDecodeError:
+                    continue
+                if isinstance(candidate, dict):
+                    parsed = candidate
+                    break
+            if parsed is None:
+                raise
     if not isinstance(parsed, dict):
-        raise TypeError("analysis must be an object")
+        raise TypeError("response must be a JSON object")
     return parsed
 
 

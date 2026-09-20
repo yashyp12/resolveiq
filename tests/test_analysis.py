@@ -57,6 +57,20 @@ def converse_response(value):
     return {"output": {"message": {"content": [{"text": json.dumps(value)}]}}}
 
 
+def runbook_response(**overrides):
+    value = {
+        "title": "Checkout API recovery",
+        "problem": "Checkout requests returned HTTP 502.",
+        "preconditions": ["Confirm approval."],
+        "diagnosticSteps": ["Review deployment logs."],
+        "verification": ["Confirm HTTP 200 responses."],
+        "remediation": ["Revert the fictional deployment."],
+        "escalation": ["Contact the service owner."],
+    }
+    value.update(overrides)
+    return value
+
+
 def test_mock_provider_is_selected_by_default(monkeypatch):
     monkeypatch.delenv("ANALYSIS_PROVIDER", raising=False)
     assert isinstance(_analysis_adapter(), MockBedrockAdapter)
@@ -103,6 +117,21 @@ def test_bedrock_parses_fenced_json_response():
     assert adapter.analyze(incident(), evidence()) == value
 
 
+def test_bedrock_parses_raw_json_response():
+    value = analysis_response()
+    adapter = BedrockAnalysisAdapter(client=FakeBedrockClient(converse_response(value)), model_id="demo-model")
+
+    assert adapter.analyze(incident(), evidence()) == value
+
+
+def test_bedrock_parses_json_surrounded_by_harmless_text():
+    value = analysis_response()
+    response = {"output": {"message": {"content": [{"text": f"Here is the analysis:\n{json.dumps(value)}\nEnd of analysis."}]}}}
+    adapter = BedrockAnalysisAdapter(client=FakeBedrockClient(response), model_id="demo-model")
+
+    assert adapter.analyze(incident(), evidence()) == value
+
+
 def test_malformed_bedrock_response_is_sanitized():
     response = {"output": {"message": {"content": [{"text": "not json"}]}}}
     adapter = BedrockAnalysisAdapter(client=FakeBedrockClient(response), model_id="demo-model")
@@ -112,15 +141,7 @@ def test_malformed_bedrock_response_is_sanitized():
 
 
 def test_bedrock_runbook_adapter_returns_structured_runbook():
-    value = {
-        "title": "Checkout API recovery",
-        "problem": "Checkout requests returned HTTP 502.",
-        "preconditions": ["Confirm approval."],
-        "diagnosticSteps": ["Review deployment logs."],
-        "verification": ["Confirm HTTP 200 responses."],
-        "remediation": ["Revert the fictional deployment."],
-        "escalation": ["Contact the service owner."],
-    }
+    value = runbook_response()
     client = FakeBedrockClient(converse_response(value))
     adapter = BedrockRunbookAdapter(client=client, model_id="demo-model")
 
@@ -137,19 +158,51 @@ def test_bedrock_runbook_adapter_returns_structured_runbook():
     assert "VALIDATED ANALYSIS" in client.requests[0]["messages"][0]["content"][0]["text"]
 
 
-def test_bedrock_runbook_adapter_normalizes_single_item_problem_array():
-    value = {
-        "title": "Checkout API recovery",
-        "problem": ["Checkout requests returned HTTP 502."],
-        "preconditions": ["Confirm approval."],
-        "diagnosticSteps": ["Review deployment logs."],
-        "verification": ["Confirm HTTP 200 responses."],
-        "remediation": ["Revert the fictional deployment."],
-        "escalation": ["Contact the service owner."],
-    }
+def test_bedrock_runbook_prompt_requires_raw_json():
+    client = FakeBedrockClient(converse_response(runbook_response()))
+    adapter = BedrockRunbookAdapter(client=client, model_id="demo-model")
+
+    adapter.generate(incident(), "Reverted the fictional deployment.", evidence())
+
+    system_prompt = client.requests[0]["system"][0]["text"]
+    assert "raw JSON object" in system_prompt
+    assert "Markdown code fences" in system_prompt
+    assert "diagnosticSteps" in system_prompt
+
+
+def test_bedrock_runbook_parses_json_surrounded_by_harmless_text():
+    value = runbook_response()
+    response = {"output": {"message": {"content": [{"text": f"Runbook:\n{json.dumps(value)}\nDone."}]}}}
+    adapter = BedrockRunbookAdapter(client=FakeBedrockClient(response), model_id="demo-model")
+
+    assert adapter.generate(incident(), "Reverted the fictional deployment.", evidence()) == value
+
+
+@pytest.mark.parametrize("field", ["preconditions", "diagnosticSteps", "verification", "remediation", "escalation"])
+def test_bedrock_runbook_normalizes_non_empty_string_list_fields(field):
+    value = runbook_response(**{field: "Review the fictional service."})
     adapter = BedrockRunbookAdapter(client=FakeBedrockClient(converse_response(value)), model_id="demo-model")
 
-    assert adapter.generate(incident(), "Reverted the fictional deployment.", evidence())["problem"] == "Checkout requests returned HTTP 502."
+    result = adapter.generate(incident(), "Reverted the fictional deployment.", evidence())
+
+    assert result[field] == ["Review the fictional service."]
+
+
+@pytest.mark.parametrize("field_value", [123, {}, [["nested"]]])
+def test_bedrock_runbook_rejects_invalid_list_field_types(field_value):
+    value = runbook_response(preconditions=field_value)
+    adapter = BedrockRunbookAdapter(client=FakeBedrockClient(converse_response(value)), model_id="demo-model")
+
+    with pytest.raises(BedrockAnalysisError, match="invalid runbook response"):
+        adapter.generate(incident(), "Reverted the fictional deployment.", evidence())
+
+
+@pytest.mark.parametrize("field", ["title", "problem"])
+def test_bedrock_runbook_adapter_normalizes_single_item_string_array(field):
+    value = runbook_response(**{field: ["Checkout API recovery."]})
+    adapter = BedrockRunbookAdapter(client=FakeBedrockClient(converse_response(value)), model_id="demo-model")
+
+    assert adapter.generate(incident(), "Reverted the fictional deployment.", evidence())[field] == "Checkout API recovery."
 
 
 @pytest.mark.parametrize(
