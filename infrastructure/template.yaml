@@ -83,6 +83,9 @@ Resources:
             - Effect: Allow
               Action:
                 - bedrock:InvokeModel
+                - bedrock:InvokeModelWithResponseStream
+                - bedrock:GetInferenceProfile
+                - bedrock:ListInferenceProfiles
               Resource: "*"
       Events:
         AnalyzeIncident:

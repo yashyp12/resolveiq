@@ -48,6 +48,7 @@ def analyze_incident(
     evidence = [*retrieved.historical_incidents, *retrieved.runbooks]
     raw_analysis = selected_adapter.analyze(incident, retrieved)
     analysis = validate_analysis_response(raw_analysis, evidence)
+    repository.save_incident_analysis(incident.incident_id, analysis)
     return {
         "incident": _incident_response(incident),
         "evidence": [_evidence_response(item) for item in evidence],
@@ -69,10 +70,12 @@ def generate_runbook(
     incident = repository.get_incident(incident_id)
     if incident is None:
         raise LookupError("incident was not found")
+    analysis = repository.get_incident_analysis(incident_id)
     historical = repository.retrieve_historical_incidents(limit=30)
     runbooks = repository.retrieve_curated_runbooks(limit=10)
     retrieved = retrieve_evidence(incident, historical, runbooks, RETRIEVAL_CONFIG)
-    generated = _runbook_adapter().generate(incident, resolution, retrieved)
+    generated = _runbook_adapter().generate(incident, resolution, retrieved, analysis)
+    generated = _include_submitted_resolution(generated, resolution)
     runbook_id = id_factory() if id_factory else f"RB-{uuid4().hex}"
     runbook = GeneratedRunbook(
         runbook_id=runbook_id,
@@ -119,12 +122,14 @@ def lambda_handler(event: Mapping[str, Any], context: Any = None) -> dict[str, A
             body = base64.b64decode(body).decode("utf-8")
         if isinstance(body, str):
             body = json.loads(body)
-        repository = _default_repository()
         path = str(event.get("rawPath", event.get("path", "")))
         method = str(event.get("requestContext", {}).get("http", {}).get("method", event.get("httpMethod", ""))).upper()
         if method == "POST" and path.endswith("/runbook"):
+            repository = _default_repository()
             incident_id = path.rstrip("/").split("/")[-2]
             return _response(200, generate_runbook(incident_id, body, repository))
+        validate_request(body)
+        repository = _default_repository()
         result = analyze_incident(body, repository)
         return _response(200, result)
     except (ValueError, json.JSONDecodeError) as error:
@@ -168,6 +173,15 @@ def _default_repository() -> ResolveIQRepository:
 
 def _incident_response(incident: Incident) -> dict[str, Any]:
     return {key: value for key, value in incident.to_item().items() if key != "recordType"}
+
+
+def _include_submitted_resolution(generated: Mapping[str, Any], resolution: str) -> dict[str, Any]:
+    result = dict(generated)
+    remediation = list(result["remediation"])
+    if resolution not in remediation:
+        remediation = [resolution, *remediation[:9]]
+    result["remediation"] = remediation
+    return result
 
 
 def _evidence_response(item: Any) -> dict[str, Any]:

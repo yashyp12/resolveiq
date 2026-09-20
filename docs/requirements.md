@@ -799,9 +799,9 @@ The initial architecture should remain intentionally simple.
                       Basic Logging
 ```
 
-Amazon S3 may be introduced later when there is a concrete requirement for object/file storage.
-
-AWS Amplify may be used for frontend hosting when the frontend is ready for deployment.
+The deployed framework-free frontend is hosted in an Amazon S3 static website
+bucket. S3 is used for frontend hosting, not as a runbook or evidence store.
+AWS Amplify is not part of the current deployment.
 
 ---
 
@@ -1034,7 +1034,7 @@ The application should ultimately run using AWS-managed services.
 Minimum deployment target:
 
 ```text
-Frontend
+S3 Static Website
    ↓
 API Gateway
    ↓

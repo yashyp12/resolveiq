@@ -1,298 +1,84 @@
-# ResolveIQ — Implementation Plan
-
-## Phase 0 — Foundation
-
-### TASK-001 — Repository Foundation
-
-Create:
-
-* Project directories
-* README
-* `.gitignore`
-* AGENTS.md
-* Documentation structure
-
-Acceptance:
-
-* Repository structure exists
-* No application functionality required
-
----
-
-## Phase 1 — Backend Foundation
-
-### TASK-002 — DynamoDB Data Model
-
-Create the initial DynamoDB tables/schema required for:
-
-* incidents
-* runbooks
-
-Acceptance:
-
-* Data can be written
-* Data can be retrieved
-* Schema is documented
-
----
-
-### TASK-003 — Lambda API
-
-Implement:
-
-`POST /incidents/analyze`
-
-Initially return a controlled/mock analysis.
-
-Acceptance:
-
-* API Gateway reaches Lambda
-* Lambda validates input
-* Incident is persisted
-* Structured response is returned
-
----
-
-## Phase 2 — AI
-
-### TASK-004 — Bedrock Integration
-
-Integrate Amazon Bedrock with Lambda.
-
-Acceptance:
-
-* Backend can invoke the selected Bedrock model
-* Credentials are not exposed
-* Errors/timeouts are handled
-* AI output is structured
-
----
-
-### TASK-005 — Evidence Retrieval
-
-Implement retrieval of relevant historical incidents/runbooks.
-
-Initial implementation should prioritize simplicity.
-
-Do not introduce a vector database unless the basic retrieval approach proves insufficient.
-
-Acceptance:
-
-* Similar historical information can be retrieved
-* Retrieved evidence is passed to the AI analysis
-* Results identify their evidence sources
-
----
-
-### TASK-006 — Incident Analysis
-
-Combine:
-
-Incident
-+
-Historical evidence
-+
-Bedrock
-
-into the final structured analysis.
-
-Acceptance:
-
-* Likely causes
-* Confidence
-* Evidence
-* Recommended checks
-* Similar incidents
-
-are returned.
-
----
-
-## Phase 3 — Frontend
-
-### TASK-007 — Incident Submission UI
-
-Build the primary incident form.
-
-Acceptance:
-
-* User can submit an incident
-* API is called
-* Loading/error states exist
-
----
-
-### TASK-008 — Analysis Results UI
-
-Display:
-
-* Category
-* Likely causes
-* Confidence
-* Evidence
-* Similar incidents
-* Recommended checks
-
-Acceptance:
-
-* Results are readable
-* Evidence is visually distinguishable from AI inference
-
----
-
-### TASK-009 — Runbook UI
-
-Allow the user to generate and view a runbook.
-
-Acceptance:
-
-* Runbook can be generated
-* Runbook is persisted
-* User can view it after creation
-
----
-
-## Phase 4 — MCP / Agent Layer
-
-### TASK-010 — MCP Tool Design
-
-Define tools for:
-
-* searching incidents
-* retrieving incident details
-* searching runbooks
-* retrieving runbooks
-* creating runbooks
-
-Do not implement unnecessary tools.
-
----
-
-### TASK-011 — MCP Integration
-
-Integrate the selected MCP implementation if it can be completed without jeopardizing the core MVP.
-
-Acceptance:
-
-* At least one meaningful workflow uses the MCP tool layer
-* Tool access is controlled
-* No unrestricted production access exists
-
-If MCP threatens MVP completion, defer it until the core application is stable.
-
----
-
-## Phase 5 — Deployment
-
-### TASK-012 — Infrastructure Definition
-
-Define reproducible AWS infrastructure using an appropriate AWS-supported infrastructure tool.
-
-Preferred approach:
-
-Use the simplest approach that can reliably deploy the MVP.
-
----
-
-### TASK-013 — Backend Deployment
-
-Deploy:
-
-* API Gateway
-* Lambda
-* DynamoDB
-* Bedrock integration
-
-Acceptance:
-
-* Public API works
-* Logs are available
-* No secrets are committed
-
----
-
-### TASK-014 — Frontend Deployment
-
-Deploy frontend using AWS Amplify or another hackathon-approved AWS hosting approach.
-
-Acceptance:
-
-* Public HTTPS URL works
-* Frontend communicates with deployed backend
-
----
-
-## Phase 6 — Quality
-
-### TASK-015 — Integration Testing
-
-Test the complete flow:
-
-User
-→ Frontend
-→ API Gateway
-→ Lambda
-→ DynamoDB
-→ Bedrock
-→ Response
-
----
-
-### TASK-016 — Failure Handling
-
-Test:
-
-* Invalid input
-* Bedrock failure
-* API failure
-* Missing historical evidence
-* Empty incident fields
-* Network/API timeout
-
----
-
-## Phase 7 — Submission
-
-### TASK-017 — Documentation
-
-Complete:
-
-* README
-* Architecture diagram
-* Setup instructions
-* Deployment instructions
-* AWS services
-* AI tools used
-* MCP usage
-* Lessons learned
-
----
-
-### TASK-018 — Demo
-
-Create a maximum 3-minute demonstration covering:
-
-1. Problem
-2. Incident submission
-3. AI analysis
-4. Evidence
-5. Troubleshooting recommendations
-6. Runbook generation
-7. AWS architecture
-
----
-
-## Development Rule
-
-Never start a later phase if the previous critical phase is broken.
-
-Priority:
-
-1. Working backend
-2. Working AI
-3. Working frontend
-4. Working deployment
-5. MCP
-6. Polish
-
-The core workflow must remain functional at every stage.
+# ResolveIQ implementation status
+
+This document records the MVP work that is implemented and deployed. It is
+intended to distinguish completed scope from deferred ideas.
+
+## Completed foundation
+
+- Repository structure, documentation, tests, and fictional demo data.
+- Typed incident, historical incident, curated runbook, and generated runbook
+  records.
+- DynamoDB persistence for `ResolveIQ-Incidents` and `ResolveIQ-Runbooks`.
+- Deterministic bounded retrieval of historical incidents and curated runbooks.
+
+## Completed backend
+
+- `POST /incidents/analyze`
+  - Validates input.
+  - Persists the incident.
+  - Retrieves bounded evidence.
+  - Invokes Amazon Bedrock.
+  - Validates structured analysis and evidence references.
+  - Persists the validated analysis.
+  - Returns facts, evidence, inference, checks, and uncertainty.
+- `POST /incidents/{incidentId}/runbook`
+  - Validates the submitted resolution.
+  - Retrieves the incident, validated analysis, and bounded evidence.
+  - Invokes Bedrock.
+  - Validates and persists a generated runbook.
+  - Preserves the exact submitted resolution.
+- Explicit API errors for invalid input, provider failures, malformed model
+  output, and missing incidents.
+
+## Completed frontend
+
+- Framework-free HTML, CSS, and JavaScript incident form.
+- Loading and error states.
+- Current incident facts, historical evidence, AI inference, confidence,
+  recommended checks, and uncertainty display.
+- Explicit empty/no-match evidence state.
+- Runbook generation and structured runbook display.
+- Live API configuration in `frontend/config.js`.
+
+## Completed deployment
+
+- Backend deployed with AWS SAM / CloudFormation to stack `resolveiq` in
+  `us-east-1`.
+- API Gateway, Lambda, DynamoDB, Bedrock, and CloudWatch Logs are active.
+- Frontend deployed as an S3 static website:
+  `http://resolveiq-frontend-089781651236.s3-website-us-east-1.amazonaws.com/`.
+- The frontend public URL is HTTP. CloudFront and HTTPS frontend hosting are
+  not deployed.
+- The live provider is Bedrock with model
+  `us.amazon.nova-2-lite-v1:0`.
+
+## Verification completed
+
+- 45 automated Python tests pass.
+- Python compilation, JavaScript syntax, SAM validation, and diff checks pass.
+- Live analysis and runbook endpoints return successfully.
+- Headless Chrome verifies the deployed incident-to-analysis-to-runbook
+  workflow.
+- The browser verifies loading, empty evidence, uncertainty, runbook, and
+  submitted-resolution behavior.
+
+## Deferred scope
+
+The following are intentionally not implemented:
+
+- MCP or multi-agent orchestration.
+- Vector databases, embeddings, or a separate RAG service.
+- Authentication and multi-tenant access control.
+- Real ServiceNow or production infrastructure integration.
+- Automatic remediation or infrastructure-changing actions.
+- Kubernetes, queues, additional databases, or CloudFront.
+
+## Next priorities, if the project continues
+
+1. Add authentication before use beyond a public demo.
+2. Improve demo data management and retrieval while preserving evidence
+   traceability.
+3. Add HTTPS hosting only if a production-style public URL is required.
+4. Expand observability and repeatable frontend deployment automation.
+
+These are future improvements, not current acceptance criteria.

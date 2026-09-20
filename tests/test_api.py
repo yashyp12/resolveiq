@@ -18,6 +18,11 @@ class FakeTable:
         key = Item.get("incidentId", Item.get("runbookId"))
         self.items[key] = Item
 
+    def update_item(self, Key, UpdateExpression, ExpressionAttributeValues):
+        key = next(iter(Key.values()))
+        field = UpdateExpression.split()[1]
+        self.items[key][field] = ExpressionAttributeValues[":analysis"]
+
     def get_item(self, Key):
         key = next(iter(Key.values()))
         return {"Item": self.items[key]} if key in self.items else {}
@@ -53,6 +58,7 @@ def test_valid_request_persists_and_returns_retrieved_analysis():
 
     assert result["incident"]["incidentId"] == "INC-TEST"
     assert incidents.items["INC-TEST"]["title"] == valid_payload()["title"]
+    assert incidents.items["INC-TEST"]["analysis"]["category"] == result["analysis"]["category"]
     assert result["evidence"]
     assert result["analysis"]["likelyCauses"][0]["evidenceIds"]
 
@@ -119,6 +125,21 @@ def test_runbook_requires_resolution_and_persists_successful_context():
     assert result["runbook"]["runbookId"] == "RB-GENERATED"
     assert result["runbook"]["remediation"] == ["Reverted the fictional deployment and verified connectivity."]
     assert repository.get_runbook("RB-GENERATED") is not None
+    assert repository.get_incident_analysis("INC-RUNBOOK") == incident["analysis"]
+
+
+def test_runbook_always_preserves_submitted_resolution():
+    repository, _ = repository_with_seed_data()
+    analyze_incident(valid_payload(), repository, id_factory=lambda: "INC-RUNBOOK")
+
+    result = generate_runbook(
+        "INC-RUNBOOK",
+        {"resolution": "Applied the approved fictional correction."},
+        repository,
+        id_factory=lambda: "RB-GENERATED",
+    )
+
+    assert "Applied the approved fictional correction." in result["runbook"]["remediation"]
 
 
 @pytest.mark.parametrize("confidence", [-0.1, 1.1])

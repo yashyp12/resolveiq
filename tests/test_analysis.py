@@ -79,7 +79,7 @@ def test_bedrock_provider_requires_model_id(monkeypatch):
         _analysis_adapter()
 
 
-def test_bedrock_request_contains_facts_evidence_and_structured_output():
+def test_bedrock_request_contains_facts_and_evidence_without_unsupported_output_config():
     client = FakeBedrockClient(converse_response(analysis_response()))
     adapter = BedrockAnalysisAdapter(client=client, model_id="demo-model")
 
@@ -91,7 +91,7 @@ def test_bedrock_request_contains_facts_evidence_and_structured_output():
     prompt = request["messages"][0]["content"][0]["text"]
     assert "CURRENT INCIDENT FACTS" in prompt
     assert "RETRIEVED EVIDENCE" in prompt
-    assert request["outputConfig"]["textFormat"]["type"] == "json_schema"
+    assert "outputConfig" not in request
     assert result == analysis_response()
 
 
@@ -124,11 +124,32 @@ def test_bedrock_runbook_adapter_returns_structured_runbook():
     client = FakeBedrockClient(converse_response(value))
     adapter = BedrockRunbookAdapter(client=client, model_id="demo-model")
 
-    result = adapter.generate(incident(), "Reverted the fictional deployment.", evidence())
+    result = adapter.generate(
+        incident(),
+        "Reverted the fictional deployment.",
+        evidence(),
+        analysis_response(),
+    )
 
     assert result == value
     assert client.requests[0]["modelId"] == "demo-model"
     assert "SUCCESSFUL RESOLUTION" in client.requests[0]["messages"][0]["content"][0]["text"]
+    assert "VALIDATED ANALYSIS" in client.requests[0]["messages"][0]["content"][0]["text"]
+
+
+def test_bedrock_runbook_adapter_normalizes_single_item_problem_array():
+    value = {
+        "title": "Checkout API recovery",
+        "problem": ["Checkout requests returned HTTP 502."],
+        "preconditions": ["Confirm approval."],
+        "diagnosticSteps": ["Review deployment logs."],
+        "verification": ["Confirm HTTP 200 responses."],
+        "remediation": ["Revert the fictional deployment."],
+        "escalation": ["Contact the service owner."],
+    }
+    adapter = BedrockRunbookAdapter(client=FakeBedrockClient(converse_response(value)), model_id="demo-model")
+
+    assert adapter.generate(incident(), "Reverted the fictional deployment.", evidence())["problem"] == "Checkout requests returned HTTP 502."
 
 
 @pytest.mark.parametrize(

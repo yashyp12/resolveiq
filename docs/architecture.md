@@ -1,59 +1,99 @@
-# ResolveIQ architecture
+# ResolveIQ current architecture
 
-## Runtime path
+## Deployed runtime
 
-```text
-Browser
-  |
-  v
-API Gateway HTTP API
-  |
-  v
-Lambda: backend.api.lambda_handler
-  |                         \
-  v                          v
-DynamoDB                  Amazon Bedrock
-ResolveIQ-Incidents       optional real provider
-ResolveIQ-Runbooks
-  |
-  v
-CloudWatch Logs
+```mermaid
+flowchart TD
+    User --> S3["S3 Static Website"]
+    S3 --> API["API Gateway HTTP API"]
+    API --> Lambda["AWS Lambda"]
+    Lambda --> Incidents["DynamoDB: ResolveIQ-Incidents"]
+    Lambda --> Runbooks["DynamoDB: ResolveIQ-Runbooks"]
+    Lambda --> Bedrock["Amazon Bedrock"]
 ```
 
-The static frontend is deliberately framework-free. Its API origin is
-configured in [frontend/config.js](../frontend/config.js), so hosting it does
-not require a second application runtime.
+The current public frontend is the framework-free site at
+`http://resolveiq-frontend-089781651236.s3-website-us-east-1.amazonaws.com/`.
+It calls the deployed API at
+`https://1ddl4fmkml.execute-api.us-east-1.amazonaws.com`.
+The frontend URL is HTTP because CloudFront is not part of the current
+deployment.
 
-## Analyze flow
+The backend is deployed in `us-east-1` with:
 
-`POST /incidents/analyze` validates the three required incident fields,
-persists the current incident, scans bounded fictional historical records and
-curated runbooks, and ranks them using deterministic field/token scoring.
-Only the bounded evidence is supplied to the configured analysis adapter.
-The response validator rejects unknown evidence IDs, invalid confidence values,
-and malformed model output.
+- API Gateway HTTP API
+- Lambda function `ResolveIQ-IncidentAnalysis`
+- DynamoDB tables `ResolveIQ-Incidents` and `ResolveIQ-Runbooks`
+- Amazon Bedrock model `us.amazon.nova-2-lite-v1:0`
+- CloudWatch Logs through the Lambda execution role
 
-## Runbook flow
+The deployed analysis provider is `bedrock`. The backend source and resources
+are defined in [infrastructure/template.yaml](../infrastructure/template.yaml).
 
-`POST /incidents/{incidentId}/runbook` requires a user-supplied successful
-resolution. The Lambda retrieves the incident and bounded evidence, invokes
-the Bedrock runbook adapter when `ANALYSIS_PROVIDER=bedrock`, or uses the
-deterministic mock adapter otherwise. The structured runbook is validated and
-persisted in the runbooks table.
+## Incident analysis
 
-ResolveIQ never executes the recommended checks or remediation. Generated
-runbooks are guidance for human review.
+`POST /incidents/analyze` follows this path:
 
-## Infrastructure
+1. Validate required and optional incident fields.
+2. Create and persist a current incident record.
+3. Load bounded fictional historical incidents and curated runbooks from
+   DynamoDB.
+4. Rank records using deterministic service, category, tag, symptom, and token
+   matches.
+5. Send only the bounded retrieved records and current incident facts to
+   Bedrock.
+6. Validate the structured analysis, confidence values, and evidence IDs.
+7. Persist the validated analysis with the incident and return facts, evidence,
+   and analysis to the frontend.
 
-[infrastructure/template.yaml](../infrastructure/template.yaml) defines:
+Retrieval is ordinary backend logic. ResolveIQ does not use a vector database,
+embeddings, a RAG service, or unrestricted model access.
 
-* Two PAY_PER_REQUEST DynamoDB tables with simple partition keys.
-* One Python 3.12 Lambda function.
-* One API Gateway HTTP API with the two POST routes.
-* Lambda basic logging permissions.
-* Table CRUD permissions limited to the two application tables.
-* `bedrock:InvokeModel` permission for the configured model provider.
+## Evidence and uncertainty
 
-No queues, databases beyond DynamoDB, vector search, or production-control
-services are required by the MVP.
+The response separates:
+
+- Current incident facts.
+- Retrieved historical evidence and curated runbook evidence.
+- AI inference, including confidence and supporting evidence IDs.
+- Recommended diagnostic checks.
+- Uncertainty and limitations.
+
+Evidence is bounded and model references are checked against the exact
+retrieval result. If no records match, the API returns an empty evidence list
+and the model is instructed to state that limitation. Arbitrary fictional demo
+incidents may therefore have no supporting historical evidence.
+
+## Runbook generation
+
+`POST /incidents/{incidentId}/runbook`:
+
+1. Validates the user-supplied successful resolution.
+2. Retrieves the stored incident and validated analysis.
+3. Retrieves the same bounded evidence context.
+4. Invokes the Bedrock runbook adapter.
+5. Validates the structured runbook response.
+6. Preserves the exact submitted resolution as a human-controlled remediation
+   item.
+7. Persists the generated runbook in `ResolveIQ-Runbooks`.
+8. Returns the runbook to the frontend.
+
+The runbook contains problem, preconditions, diagnostic steps, verification,
+remediation, and escalation sections. ResolveIQ does not execute any of them.
+
+## Persistence and validation
+
+Current incidents and their validated analyses are stored in
+`ResolveIQ-Incidents`. Curated and generated runbooks are stored in
+`ResolveIQ-Runbooks`. DynamoDB-safe numeric conversion is applied when analysis
+confidence values are persisted.
+
+The backend rejects invalid input, malformed Bedrock output, invalid confidence
+values, unknown evidence IDs, and invalid runbook fields. AWS service failures
+are returned as explicit API errors.
+
+## Scope boundaries
+
+The deployed MVP uses fictional/demo data and does not include authentication,
+real ServiceNow integration, automatic remediation, Kubernetes, MCP, vector
+search, or CloudFront.
