@@ -152,7 +152,7 @@ function render(result) {
           </div>
           <div class="cause-evidence">
             <span class="evidence-pill-label">Evidence cited:</span>
-            <span class="evidence-pill">${escapeHtml(cause.evidenceIds.join(", ") || "None cited")}</span>
+            <span class="evidence-pill">${escapeHtml((cause.evidenceIds || []).join(", ") || "None cited")}</span>
           </div>
         </div>
       `).join("")
@@ -369,19 +369,30 @@ function formatRunbookForClipboard(runbook) {
 }
 
 async function copyToClipboard(text, buttonElement, defaultText = "Copy") {
+  const copyWithFallback = () => {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    const copied = document.execCommand("copy");
+    document.body.removeChild(textarea);
+    if (!copied) {
+      throw new Error("Clipboard fallback failed");
+    }
+  };
+
   try {
     if (navigator?.clipboard?.writeText) {
-      await navigator.clipboard.writeText(text);
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (clipboardError) {
+        copyWithFallback();
+      }
     } else {
-      const textarea = document.createElement("textarea");
-      textarea.value = text;
-      textarea.style.position = "fixed";
-      textarea.style.opacity = "0";
-      document.body.appendChild(textarea);
-      textarea.focus();
-      textarea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textarea);
+      copyWithFallback();
     }
 
     const originalHtml = buttonElement.innerHTML;
@@ -408,4 +419,42 @@ function escapeHtml(value) {
     '"': "&quot;",
     "'": "&#039;"
   }[character]));
+}
+
+// Presentation-only behavior. The incident workflow above remains unchanged.
+const siteHeader = document.querySelector(".site-header");
+const navToggle = document.querySelector(".nav-toggle");
+const navLinks = document.querySelector("#nav-links");
+
+window.addEventListener("scroll", () => {
+  if (siteHeader) siteHeader.classList.toggle("scrolled", window.scrollY > 8);
+}, { passive: true });
+
+if (navToggle && navLinks) {
+  navToggle.addEventListener("click", () => {
+    const isOpen = navLinks.classList.toggle("open");
+    navToggle.setAttribute("aria-expanded", String(isOpen));
+  });
+
+  navLinks.addEventListener("click", (event) => {
+    if (event.target.closest("a")) {
+      navLinks.classList.remove("open");
+      navToggle.setAttribute("aria-expanded", "false");
+    }
+  });
+}
+
+const revealItems = document.querySelectorAll(".reveal");
+if ("IntersectionObserver" in window && revealItems.length) {
+  const revealObserver = new IntersectionObserver((entries, observer) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("visible");
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12 });
+  revealItems.forEach((item) => revealObserver.observe(item));
+} else {
+  revealItems.forEach((item) => item.classList.add("visible"));
 }

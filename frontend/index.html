@@ -3,147 +3,123 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ResolveIQ | Evidence-first incident analysis</title>
+    <meta name="description" content="ResolveIQ is evidence-first incident intelligence for infrastructure teams." />
+    <title>ResolveIQ | Evidence-first incident intelligence</title>
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <main class="shell">
-      <header class="hero">
-        <p class="eyebrow">RESOLVEIQ / INCIDENT INTELLIGENCE</p>
-        <h1>Turn incident signals into a defensible next step.</h1>
-        <p class="lede">Compare a current incident with fictional historical evidence and runbooks. ResolveIQ suggests checks without making production changes.</p>
-      </header>
+    <header class="site-header" id="top">
+      <nav class="nav container" aria-label="Primary navigation">
+        <a class="brand" href="#top" aria-label="ResolveIQ home">
+          <img src="assets/resolveiq-mark.svg" alt="" class="brand-mark" />
+          <span><strong>ResolveIQ</strong><small>Evidence-first incident intelligence</small></span>
+        </a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links">Menu</button>
+        <div class="nav-links" id="nav-links">
+          <a href="#product">Product</a>
+          <a href="#how-it-works">How it works</a>
+          <a href="#analyzer">Analyzer</a>
+          <a href="#architecture">Architecture</a>
+          <a href="docs.html">Docs</a>
+          <a class="nav-github" href="https://github.com/yashyp12/resolveiq" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+          <a class="btn btn-primary nav-cta" href="#analyzer">Try demo</a>
+        </div>
+      </nav>
+    </header>
 
-      <section class="panel">
-        <form id="incident-form">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">CURRENT INCIDENT</p>
-              <h2>Describe what is happening</h2>
-            </div>
-            <span class="badge">Human-controlled guidance</span>
+    <main>
+      <section class="hero section container" id="product">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="status-dot"></span> AI-ASSISTED INCIDENT INTELLIGENCE</p>
+          <h1>Turn infrastructure incidents into <em>defensible next steps.</em></h1>
+          <p class="lede">ResolveIQ combines historical incident evidence with AI-assisted reasoning while keeping facts, evidence, and inference clearly separated.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#analyzer">Try live demo <span aria-hidden="true">→</span></a>
+            <a class="btn btn-outline" href="https://github.com/yashyp12/resolveiq" target="_blank" rel="noreferrer">View on GitHub <span aria-hidden="true">↗</span></a>
           </div>
-
-          <div class="grid">
-            <label for="input-title">Title <span class="required-indicator" aria-hidden="true">*</span>
-              <input id="input-title" name="title" maxlength="200" required placeholder="EC2 application server unreachable" />
-            </label>
-            <label for="input-environment">Environment <span class="required-indicator" aria-hidden="true">*</span>
-              <input id="input-environment" name="environment" maxlength="100" required placeholder="production-like demo" />
-            </label>
-            <label for="input-description" class="wide">Description <span class="required-indicator" aria-hidden="true">*</span>
-              <textarea id="input-description" name="description" maxlength="3000" required placeholder="What changed, and what symptoms are visible?"></textarea>
-            </label>
-            <label for="input-service">Service
-              <input id="input-service" name="service" maxlength="100" placeholder="application-server" />
-            </label>
-            <label for="input-error">Error message
-              <input id="input-error" name="error" maxlength="1000" placeholder="connection timeout" />
-            </label>
-          </div>
-
-          <div class="form-actions">
-            <button id="submit-button" type="submit" class="btn btn-primary">
-              <span class="btn-text">Analyze incident</span>
-              <span class="btn-icon" aria-hidden="true">→</span>
-            </button>
-            <button id="demo-button" type="button" class="btn btn-secondary">
-              Load demo incident
-            </button>
-            <button id="reset-button" type="button" class="btn btn-ghost">
-              Clear
-            </button>
-          </div>
-
-          <p id="demo-notice" class="demo-notice" role="status" hidden>
-            Loaded fictional scenario for demonstration. You can inspect or edit before analyzing.
-          </p>
-          <p id="form-error" class="error" role="alert" hidden></p>
-        </form>
-      </section>
-
-      <section id="results" class="results-section" hidden>
-        <div class="result-header">
-          <div>
-            <p class="eyebrow">ANALYSIS RESULT</p>
-            <h2 id="result-title"></h2>
-          </div>
-          <div class="result-header-actions">
-            <span id="category" class="category"></span>
-            <button id="copy-analysis-btn" type="button" class="btn btn-outline btn-sm" title="Copy analysis summary to clipboard">
-              <span class="btn-text">Copy analysis</span>
-            </button>
+          <div class="tech-strip" aria-label="Technology used">
+            <span>Amazon Bedrock</span><span>AWS Lambda</span><span>API Gateway</span><span>DynamoDB</span><span>CloudWatch</span>
           </div>
         </div>
+        <div class="hero-visual" aria-label="Evidence-first analysis preview">
+          <div class="terminal-bar"><span></span><span></span><span></span><code>resolveiq / analysis</code></div>
+          <div class="terminal-body">
+            <p class="terminal-muted">$ incident analyze --evidence-first</p>
+            <p><span class="terminal-green">✓</span> Incident captured</p>
+            <p><span class="terminal-green">✓</span> 5 historical records retrieved</p>
+            <p><span class="terminal-blue">→</span> Generating bounded hypotheses...</p>
+            <div class="signal-card"><span class="signal-label">AI INFERENCE · UNCONFIRMED</span><strong>Dependency connectivity degradation</strong><small>Evidence cited: INC-014, INC-021</small></div>
+            <p class="terminal-muted">Human verification required before action.</p>
+          </div>
+        </div>
+      </section>
 
+      <section class="section section-border container problem-section reveal">
+        <div class="section-intro"><p class="eyebrow">THE OPERATIONS GAP</p><h2>Incident response should not start from zero.</h2><p>When an incident happens, engineers search through tickets, runbooks, logs, and tribal knowledge before deciding what to investigate. ResolveIQ turns that scattered context into a structured starting point.</p></div>
+        <div class="compare-grid">
+          <div class="compare-card muted-card"><span class="compare-label">WITHOUT RESOLVEIQ</span><div class="flow"><b>Incident</b><i>↓</i><b>Search</b><i>↓</i><b>Guess</b><i>↓</i><b>Investigate</b><i>↓</i><b>Document</b></div></div>
+          <div class="compare-card accent-card"><span class="compare-label">WITH RESOLVEIQ</span><div class="flow"><b>Incident</b><i>↓</i><b>Retrieve evidence</b><i>↓</i><b>Generate hypotheses</b><i>↓</i><b>Verify → Resolve → Preserve</b></div></div>
+        </div>
+      </section>
+
+      <section class="section container reveal" id="how-it-works">
+        <div class="section-intro centered"><p class="eyebrow">A REPEATABLE WORKFLOW</p><h2>From signal to operational knowledge.</h2></div>
+        <div class="steps-grid">
+          <article class="step"><span>01</span><h3>Capture incident</h3><p>Provide the observable facts, environment, service, and error.</p></article>
+          <article class="step"><span>02</span><h3>Retrieve evidence</h3><p>Find relevant fictional historical incidents and runbooks.</p></article>
+          <article class="step"><span>03</span><h3>Generate hypotheses</h3><p>Bedrock produces structured possible causes.</p></article>
+          <article class="step"><span>04</span><h3>Verify</h3><p>Use recommended diagnostic checks to validate hypotheses.</p></article>
+          <article class="step"><span>05</span><h3>Resolve</h3><p>A human engineer records the actual resolution.</p></article>
+          <article class="step"><span>06</span><h3>Preserve knowledge</h3><p>Convert successful resolutions into reusable runbooks.</p></article>
+        </div>
+      </section>
+
+      <section class="section analyzer-section container reveal" id="analyzer">
+        <div class="section-intro analyzer-intro"><p class="eyebrow"><span class="status-dot"></span> LIVE INCIDENT ANALYZER</p><h2>Investigate with context, not confidence theater.</h2><p>Analyze a fictional infrastructure incident using historical evidence and Amazon Bedrock.</p></div>
+        <div class="analyzer-layout">
+          <section class="panel incident-panel">
+            <div class="section-heading"><div><p class="eyebrow">INCIDENT INPUT</p><h2>Describe what is happening</h2></div><span class="badge">Human-controlled guidance</span></div>
+            <form id="incident-form">
+              <div class="grid">
+                <label for="input-title">Title <span class="required-indicator" aria-hidden="true">*</span><input id="input-title" name="title" maxlength="200" required placeholder="EC2 application server unreachable" /></label>
+                <label for="input-environment">Environment <span class="required-indicator" aria-hidden="true">*</span><input id="input-environment" name="environment" maxlength="100" required placeholder="production-like demo" /></label>
+                <label for="input-description" class="wide">Description <span class="required-indicator" aria-hidden="true">*</span><textarea id="input-description" name="description" maxlength="3000" required placeholder="What changed, and what symptoms are visible?"></textarea></label>
+                <label for="input-service">Service<input id="input-service" name="service" maxlength="100" placeholder="application-server" /></label>
+                <label for="input-error">Error message<input id="input-error" name="error" maxlength="1000" placeholder="connection timeout" /></label>
+              </div>
+              <div class="form-actions">
+                <button id="submit-button" type="submit" class="btn btn-primary"><span class="btn-text">Analyze incident</span><span class="btn-icon" aria-hidden="true">→</span></button>
+                <button id="demo-button" type="button" class="btn btn-secondary">Load demo incident</button>
+                <button id="reset-button" type="button" class="btn btn-ghost">Clear</button>
+              </div>
+              <p id="demo-notice" class="demo-notice" role="status" hidden>Loaded fictional scenario for demonstration. You can inspect or edit before analyzing.</p>
+              <p id="form-error" class="error" role="alert" hidden></p>
+            </form>
+          </section>
+        </div>
+      </section>
+
+      <section id="results" class="results-section container" hidden>
+        <div class="result-header"><div><p class="eyebrow">ANALYSIS RESULT</p><h2 id="result-title"></h2></div><div class="result-header-actions"><span id="category" class="category"></span><button id="copy-analysis-btn" type="button" class="btn btn-outline btn-sm" title="Copy analysis summary to clipboard"><span class="btn-text">Copy analysis</span></button></div></div>
         <div class="result-grid">
-          <article class="card card-facts">
-            <div class="card-header">
-              <p class="eyebrow">CURRENT INCIDENT</p>
-              <span class="card-tag tag-facts">Human Facts</span>
-            </div>
-            <div id="facts" class="facts-content"></div>
-          </article>
-
-          <article class="card card-evidence">
-            <div class="card-header">
-              <p class="eyebrow">HISTORICAL EVIDENCE</p>
-              <span class="card-tag tag-evidence">Fictional Records</span>
-            </div>
-            <p class="card-hint">Historical incidents retrieved by symptom similarity.</p>
-            <div id="evidence" class="evidence-content"></div>
-          </article>
-
-          <article class="card card-inference">
-            <div class="card-header">
-              <p class="eyebrow">AI INFERENCE</p>
-              <span class="card-tag tag-inference">Hypothesis · Unconfirmed</span>
-            </div>
-            <p class="card-hint">Model-generated hypotheses. Requires human verification before making changes.</p>
-            <div id="causes" class="causes-content"></div>
-          </article>
-
-          <article class="card card-checks">
-            <div class="card-header">
-              <p class="eyebrow">RECOMMENDED CHECKS</p>
-              <span class="card-tag tag-checks">Diagnostic Only</span>
-            </div>
-            <p class="card-hint">Recommended verification steps before applying remediation.</p>
-            <ol id="checks" class="checks-list"></ol>
-          </article>
+          <article class="card card-facts"><div class="card-header"><p class="eyebrow">HUMAN FACTS</p><span class="card-tag tag-facts">Reported</span></div><div id="facts" class="facts-content"></div></article>
+          <article class="card card-evidence"><div class="card-header"><p class="eyebrow">HISTORICAL EVIDENCE</p><span class="card-tag tag-evidence">Fictional records</span></div><p class="card-hint">Historical incidents retrieved by symptom similarity.</p><div id="evidence" class="evidence-content"></div></article>
+          <article class="card card-inference"><div class="card-header"><p class="eyebrow">AI INFERENCE</p><span class="card-tag tag-inference">Hypothesis · Unconfirmed</span></div><p class="card-hint">Model-generated hypotheses. Requires human verification before making changes.</p><div id="causes" class="causes-content"></div></article>
+          <article class="card card-checks"><div class="card-header"><p class="eyebrow">RECOMMENDED CHECKS</p><span class="card-tag tag-checks">Diagnostic only</span></div><p class="card-hint">Recommended verification steps before applying remediation.</p><ol id="checks" class="checks-list"></ol></article>
         </div>
-
-        <article class="card card-uncertainty">
-          <div class="card-header">
-            <p class="eyebrow">UNCERTAINTY &amp; BOUNDARIES</p>
-            <span class="card-tag tag-uncertainty">Limitations</span>
-          </div>
-          <p id="uncertainty" class="uncertainty-content"></p>
-        </article>
-
-        <article class="card runbook-panel">
-          <div class="card-header">
-            <p class="eyebrow">REUSABLE RUNBOOK</p>
-            <span class="card-tag tag-runbook">Knowledge Preservation</span>
-          </div>
-          <h3>What resolved the incident?</h3>
-          <p class="muted">Supply the successful resolution. ResolveIQ will preserve it as human-approved troubleshooting knowledge.</p>
-          <form id="runbook-form">
-            <label for="resolution" class="sr-only">Resolution description</label>
-            <textarea id="resolution" maxlength="3000" required placeholder="Example: Reverted the fictional deployment and verified that checkout requests returned HTTP 200."></textarea>
-            <div class="runbook-actions">
-              <button id="runbook-button" type="submit" class="btn btn-primary">
-                <span class="btn-text">Generate runbook</span>
-              </button>
-            </div>
-          </form>
-          <p id="runbook-error" class="error" role="alert" hidden></p>
-          <div id="runbook-result" class="runbook-result" hidden></div>
-        </article>
+        <article class="card card-uncertainty"><div class="card-header"><p class="eyebrow">UNCERTAINTY &amp; BOUNDARIES</p><span class="card-tag tag-uncertainty">Limitations</span></div><p id="uncertainty" class="uncertainty-content"></p></article>
+        <article class="card runbook-panel"><div class="card-header"><p class="eyebrow">REUSABLE RUNBOOK</p><span class="card-tag tag-runbook">Knowledge preservation</span></div><h3>What resolved the incident?</h3><p class="muted">Supply the successful resolution. ResolveIQ will preserve it as human-approved troubleshooting knowledge.</p><form id="runbook-form"><label for="resolution" class="sr-only">Resolution description</label><textarea id="resolution" maxlength="3000" required placeholder="Example: Reverted the fictional deployment and verified that checkout requests returned HTTP 200."></textarea><div class="runbook-actions"><button id="runbook-button" type="submit" class="btn btn-primary"><span class="btn-text">Generate runbook</span></button></div></form><p id="runbook-error" class="error" role="alert" hidden></p><div id="runbook-result" class="runbook-result" hidden></div></article>
       </section>
 
-      <p class="footer">ResolveIQ uses fictional/anonymized records. Recommendations are diagnostic only and require human approval.</p>
+      <section class="section trust-section container reveal"><div class="section-intro"><p class="eyebrow">THE TRUST MODEL</p><h2>Facts are not evidence.<br />Evidence is not inference.</h2><p>ResolveIQ makes the distinction visible so engineers can investigate AI suggestions instead of treating them as confirmed facts.</p></div><div class="trust-grid"><article><span class="trust-index">01 / FACTS</span><h3>What was reported</h3><p>Observable incident information supplied by the engineer.</p></article><article><span class="trust-index">02 / EVIDENCE</span><h3>What supports it</h3><p>Historical records retrieved by deterministic application logic.</p></article><article><span class="trust-index">03 / INFERENCE</span><h3>What AI suggests</h3><p>Bounded hypotheses that require human verification.</p></article></div></section>
+
+      <section class="section architecture-section container reveal" id="architecture"><div class="section-intro centered"><p class="eyebrow">SERVERLESS AWS ARCHITECTURE</p><h2>Small surface area. Clear boundaries.</h2><p>ResolveIQ keeps the critical path simple: a static frontend, a serverless API, bounded retrieval, and structured model output.</p></div><div class="architecture-diagram"><div class="arch-node">Browser</div><i>↓</i><div class="arch-node">Amazon S3</div><i>↓</i><div class="arch-node">API Gateway</div><i>↓</i><div class="arch-node highlight">AWS Lambda</div><div class="arch-branches"><div><i>↙</i><span class="arch-node">DynamoDB</span><i>↓</i><span class="arch-node small">CloudWatch</span></div><div><i>↘</i><span class="arch-node">Amazon Bedrock</span></div></div></div></section>
+
+      <section class="section open-source container reveal"><div><p class="eyebrow">OPEN SOURCE / GITHUB</p><h2>Built in the open.</h2><p>ResolveIQ is an open-source AWS project focused on evidence-first incident analysis, human-controlled resolution, and reusable operational knowledge.</p><a class="btn btn-primary" href="https://github.com/yashyp12/resolveiq" target="_blank" rel="noreferrer">View source on GitHub <span aria-hidden="true">↗</span></a></div><img src="assets/resolveiq-logo.svg" alt="ResolveIQ" class="open-source-logo" /></section>
     </main>
+
+    <footer class="site-footer"><div class="container footer-grid"><div><a class="brand" href="#top"><img src="assets/resolveiq-mark.svg" alt="" class="brand-mark" /><span><strong>ResolveIQ</strong><small>Evidence-First Incident Intelligence</small></span></a><p>Built for learning, experimentation, and responsible AI-assisted operations.</p></div><div><strong>Explore</strong><a href="#product">Product</a><a href="#analyzer">Analyzer</a><a href="#architecture">Architecture</a><a href="docs.html">Docs</a><a href="https://github.com/yashyp12/resolveiq" target="_blank" rel="noreferrer">GitHub</a></div><div><strong>Powered by</strong><span>Amazon Bedrock</span><span>AWS Lambda</span><span>API Gateway</span><span>DynamoDB</span><span>CloudWatch</span></div></div></footer>
     <script src="config.js"></script>
     <script src="app.js"></script>
   </body>
